@@ -65,12 +65,14 @@ Begin
 
 {$I includes/detect_ansi.i}
 
-   CLS(7,0);
    Chain.Retrieve('HASANSI',HasAnsi);
    If not HasAnsi then begin
+      Cls;
       Session.SendFile(ScriptRoot+'ansasc/welcome.asc',True);
    End
    Else Begin
+{$I includes/detect_colors.i}
+      CLS(7,0);
       If FileExists(ScriptRoot+'ansasc/welcome.ans') then
          Session.SendFile(ScriptRoot+'ansasc/welcome.ans',True)
       Else Session.SendFile(ScriptRoot+'ansasc/welcome.asc',True);
@@ -104,14 +106,17 @@ Begin
    If not Connected then Exit;
    Chain.Store('NEEDSECHO',NeedsEcho);
 
-// If you do not trust auto-detect, then implement this code:
    FastWrite(7,15,14,1,'[|7C'+#223+'|1E]|1E The following word may or may not be blinking:'+
       #27'[5m |1CA|1EN|1BS|1DI|1F '+#27'[0m');
    CursorTo(11,16);
-   HasAnsi:=Ask('|1FIs it blinking|1E?|1B','YN')='Y';
-   If not Connected then Exit;
-   Chain.Store('HASANSI',HasAnsi); // user trumps auto detect!
+   If Ask('|1FIs it blinking|1E?|1B','YN')='Y' then begin
+      Chain.Store('ANSIBLINK',True);
+   end
+   else begin
+      Chain.Store('ANSIBLINK',False);
+   end;
 
+   If not Connected then Exit;
 {$IFDEF PLUGINS}
    last_caller;
 {$ENDIF}
