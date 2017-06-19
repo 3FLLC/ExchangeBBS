@@ -117,3 +117,31 @@ Begin
       If Lc>0 then Pause(True);
    End;
 End;
+
+Procedure DisplayFileEx(fn:String);
+Begin
+   If Chain.ReadBoolean('UTF8') then begin
+      If Chain.ReadBoolean('ANSITC') and FileExists(fn+'.utf8.tc') then DisplayFile(fn+'.utf8.tc')
+      else If Chain.ReadBoolean('ANSI256') and FileExists(fn+'.utf8.256') then DisplayFile(fn+'.utf8.256')
+      else If Chain.ReadBoolean('ANSI16') and FileExists(fn+'.utf8.16') then DisplayFile(fn+'.utf8.16')
+      else If Chain.ReadBoolean('ANSI8') and FileExists(fn+'.utf8.8') then DisplayFile(fn+'.utf8.8')
+      else If Chain.ReadBoolean('HASANSI') and FileExists(fn+'.utf8.ans') then DisplayFile(fn+'.utf8.ans')
+      else DisplayFile(fn+'.utf8.asc');
+   end
+   else if Chain.ReadBoolean('HIGH8') then begin
+      If Chain.ReadBoolean('ANSITC') and FileExists(fn+'.cp437.tc') then DisplayFile(fn+'.cp437.tc')
+      else If Chain.ReadBoolean('ANSI256') and FileExists(fn+'.cp437.256') then DisplayFile(fn+'.cp437.256')
+      else If Chain.ReadBoolean('ANSI16') and FileExists(fn+'.cp437.16') then DisplayFile(fn+'.cp437.16')
+      else If Chain.ReadBoolean('ANSI8') and FileExists(fn+'.cp437.8') then DisplayFile(fn+'.cp437.8')
+      else If Chain.ReadBoolean('HASANSI') and FileExists(fn+'.cp437.ans') then DisplayFile(fn+'.cp437.ans')
+      else DisplayFile(fn+'.cp437.asc');
+   end
+   else begin
+      If Chain.ReadBoolean('ANSITC') and FileExists(fn+'.tc') then DisplayFile(fn+'.tc')
+      else If Chain.ReadBoolean('ANSI256') and FileExists(fn+'.256') then DisplayFile(fn+'.256')
+      else If Chain.ReadBoolean('ANSI16') and FileExists(fn+'.16') then DisplayFile(fn+'.16')
+      else If Chain.ReadBoolean('ANSI8') and FileExists(fn+'.8') then DisplayFile(fn+'.8')
+      else If Chain.ReadBoolean('HASANSI') and FileExists(fn+'.ans') then DisplayFile(fn+'.ans')
+      else DisplayFile(fn+'.asc');
+   end;
+End;
