@@ -1,0 +1,12 @@
+    line 1  : system name (origin line in Qconfig)
+    line 2  : sysop first name
+    line 3  : sysop last name
+    line 4  : comport expressed as COM0 (local), COM1 or COM2
+    line 5  : baudrate, parity settings (parity will always be N,8,1)
+    line 6  : not used
+    line 7  : user first name
+    line 8  : user last name
+    line 9  : user city, state
+    line 10 : user ANSI setting (0 = off, 1 = on)
+    line 11 : user security level
+    line 12 : user time remaining
