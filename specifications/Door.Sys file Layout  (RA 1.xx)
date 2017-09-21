@@ -1,0 +1,6 @@
+    line 1  : user's first and last name
+    line 2  : PORT NUMBER or 0 for local
+    line 3  : baud rate
+    line 4  : Time remaining in minutes
+    line 5  : G for Graphics  M for mono
+    line 6  : "A" for ALARM, "S" for silent.
