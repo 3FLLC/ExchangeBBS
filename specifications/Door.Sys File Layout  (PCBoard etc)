@@ -1,0 +1,21 @@
+    line 1  : Comm Port - COM0: = LOCAL MODE
+    line 2  : Baud Rate - 300 to 38400
+    line 3  : Parity - 7 or 8
+    line 4  : Node Number - 1 to 99
+    line 5  : DTE Rate. Actual BPS rate to use.
+    line 6  : Screen Display - Y=On  N=Off
+    line 7  : Printer Toggle - Y=On  N=Off
+    line 8  : Page Bell      - Y=On  N=Off
+    line 9  : Caller Alarm   - Y=On  N=Off
+    line 10 : User Full Name
+    line 11 : Calling From
+    line 12 : Home Phone
+    line 13 : Work/Data Phone
+    line 14 : Password
+    line 15 : Security Level
+    line 16 : Total Times On
+    line 17 : Last Date Called
+    line 18 : Seconds Remaining THIS call
+    line 19 : Minutes Remaining THIS call
+    line 20 : Graphics Mode - GR=Graph, NG=Non-Graph, 7E=7,E Caller
+    line 21 : Screen Length
