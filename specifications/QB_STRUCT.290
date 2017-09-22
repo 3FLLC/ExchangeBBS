@@ -1,0 +1,969 @@
+ (***************************************************************************)
+ (*  Structures document for QuickBBS version 2.90.                         *)
+ (*                                                                         *)
+ (*  This information may be freely copied and used at no charge by any     *)
+ (*  party to write utilities and other software which enhances the use of  *)
+ (*  the QuickBBS software.                                                 *)
+ (*                                                                         *)
+ (*  Use of this information in any other BBS program without the           *)
+ (*  permission Of Matrix Technologies is strictly prohibited.              *)
+ (*                                                                         *)
+ (*      Copyright 1991-98 Matrix Technology                                *)
+ (*      All Rights Reserved.                                               *)
+ (***************************************************************************)
+ (***************************************************************************)
+ (*     See the file STRUCT.DOC for more detailed information on the        *)
+ (*                       QuickBBS structures!                              *)
+ (***************************************************************************)
+
+Const
+{$IFDEF GOLDBASE}
+  MaxMsgAreas  = 500;
+  FileExt = '.DAT';
+{$ELSE}
+  MaxMsgAreas  = 200;
+  FileExt = '.BBS';
+{$ENDIF}
+
+{  MaxFileAreas = 200; infinity }
+  MaxLanguages = 30;
+  MaxProtocols = 20;
+
+type
+
+  Attributes = Byte;
+  (* Each Attribute contains 8 bits, each bit is defined seperately.
+     This are broken down "below" the record. *)
+
+  FlagType = array[1..4] of Byte;
+
+{-------------------------------------------------------------------------}
+  (* File ID : USERIDX.BBS ( USERIDX.DAT - Goldbase) 
+     Used By : both GoldBase & Classic.
+     Purpose : Is used as a quick index to the user file.
+  *)
+  UserIdxRecord = record 
+                    NameCRC : LongInt;
+                    AliasCRC: LongInt;
+                  end;
+
+{-------------------------------------------------------------------------}
+  (* File ID : USERS.BBS ( USERS.DAT - Goldbase)
+     Used By : both GoldBase & Classic.
+     Purpose : Stores individual user data 
+  *)
+  UserRecord = record
+                 Name        : String[35];
+                 City        : String[25];
+                 ReservedZero: Byte; 
+                              { Reserved, should always be 0 }
+                 Language    : Byte;
+                 PwdCrc      : Longint;
+                 PwdChangeDate,
+                 ExpireDate  : Word; 
+                              { Number of days since 1/1/1900 }
+{$IFDEF GOLDBASE}
+                 HighMsgRead : LongInt;
+{$ELSE}
+                 UnusedSpace : LongInt;
+{$ENDIF}
+                 Attrib2     : Byte;   
+                 ExtraSpace  : Byte;
+                 DataPhone,
+                 HomePhone   : String[12];
+                 LastTime    : String[5];
+                 LastDate    : String[8];
+                 Attrib      : Byte;
+                 Flags       : FlagType;
+                 Credit,
+                 Pending,
+{$IFDEF GOLDBASE}
+                 TimesPosted : Word;
+                 ObsoleteField,
+{$ELSE}
+                 TimesPosted,
+                 HighMsgRead,
+{$ENDIF}
+                 SecLvl,
+                 Times,
+                 Ups,
+                 Downs,
+                 UpK,
+                 DownK       : Word;
+                 TodayK      : Integer;
+                 Elapsed,
+                 Len         : Integer;
+                 CombinedPtr : Word;
+                 (* Record number in COMBINED.BBS *)
+                 (* Note:  0 signifies no combined record assigned *)
+
+                 AliasPtr    : Word;
+                 (* Record number in ALIAS.BBS *)
+                 (* Note:  0 signifies no alias record assigned *)
+                 Birthday    : Longint;
+                 { Number of days since 1/1/1600 }
+               end;
+
+
+(* Attrib:
+      Bit 1: Deleted
+      Bit 2: Screen Clear Codes
+      Bit 3: More Prompt
+      Bit 4: ANSI
+      Bit 5: No-Kill
+      Bit 6: Ignore Download Hours
+      Bit 7: ANSI Full Screen Editor
+      Bit 8: Sex (0=male, 1=female)
+*)
+(* Attrib2:
+      Bit 1: Guest Account              (No Password Needed)
+      Bit 2: SSR Configured On/Off      (False/0 = Unused., True/1 = Activated)
+      Bit 3: Not Defined Yet (Should be False/0)
+      Bit 4: Not Defined Yet (Should be False/0)
+      Bit 5: Not Defined Yet (Should be False/0)
+      Bit 6: Not Defined Yet (Should be False/0)
+      Bit 7: Not Defined Yet (Should be False/0)
+      Bit 8: User "Dirty" Flag (If False, User Logged off correctly.
+                                If True, User Failed to Logoff Correctly)
+                                ({Not Yet Used }
+*)
+
+{-------------------------------------------------------------------------}
+type
+  UserActivityType =(InMenu,            InDoor,                InCallback,
+                     ReadingMessages,   WritingMessage,        ChattingWithSysop,
+                     ChattingWithUsers, AnsweringQuestionaire, ViewingTextFile,
+                     DownloadingFile,   UploadingFile,         ViewingFileList,
+                     DoingFileSearch,   LoggingOn,             LoggingOff,
+                     WaitingForCall,    BoardShutDown,         NoCalls);
+
+{-------------------------------------------------------------------------}
+  TimeDateRec      = Record
+      Time         : Word;
+      Date         : Word;
+  End;
+
+  UserOnAttributes = (DoNotDisturb, NodeDirty);
+  (* Used to indicate the status of the BBS Node.  These are exclusive, and
+     thus only one Attribute can exist on a node at a time. 
+
+     DoNotDisturb   - This node is not accepting *USER* to *USER* online
+                         messages via NODExx.DAT file.
+
+     NodeDirty      - The node was abnormally shutdown, usually due to a
+                         fatal system error.  (This is not yet supported).
+                         Eventually QuickBBS will use this to detect ABends
+                         (ABnormal ENDingS).
+  *)                         
+
+  (* File ID : USERON.BBS
+     Used By : both GoldBase & Classic.
+     Purpose : Stores information on the current status of the BBS Node,
+               and User that is on *)
+  USERONrecord   = record
+                     Name           : String[35];
+                     Alias          : String[35];
+                     Line           : Byte;
+                     Baud           : Word;
+                     City           : String[25];
+                     NodeStatus     : Attributes;(* See NodeStatus BreakDown *)
+                     Conference     : Byte;      (* See Conference BreakDown *)
+                     Activity       : UserActivityType;
+                     Language       : Byte;
+                     InActivity     : TimeDateRec; (* Not Yet Used *)
+                     ExtraSpace     : Array[1..4] of Byte;
+                   end;
+(* 
+   Conference:  Is used by the builtin Chat conference System.
+                Conference 255 indicates that the user is *NOT*
+                inside of the Chat System.
+   
+   NodeStatus:
+      Bit 0: Do Not Disturb
+                                        BBS Level
+
+                True    : Node to Node Messages Will be Ignored/Denied.
+                         (Note: Sysop Level will be asked if they want to
+                                Override, normal users can't override)
+                False   : All Node to Node Messages will be displayed.
+
+
+      Bit 1: Node Improperly ShutDown ("Dirty")
+                True    : If Improper Shutdown (ABEND)
+                False   : If Shutdown Correctly
+      Bit 2: Not Defined Yet (Should be False/0)
+      Bit 3: Not Defined Yet (Should be False/0)
+      Bit 4: Not Defined Yet (Should be False/0)
+      Bit 5: Not Defined Yet (Should be False/0)
+      Bit 6: Not Defined Yet (Should be False/0)
+      Bit 7: Not Defined Yet (Should be False/0)
+*)
+
+
+{-------------------------------------------------------------------------}
+  (* File ID : ALIAS.BBS
+     Used By : both GoldBase & Classic.
+     Purpose : Stores the alias name(s) of the USERS. *)
+  AliasRecord = String[35];
+  (* Note: record 0 of ALIAS.BBS is a placeholder only, and contains no
+     information. *)
+
+{-------------------------------------------------------------------------}
+  (* File ID : MSGTOIDX.BBS (MSGTOIDX.DAT - GOLDBASE)
+     Used By : both GoldBase & Classic.
+     Purpose : Used to store MSG Index records. *)
+  MsgToIdxRecord = String[35];
+
+  (* File ID : MSGTXT.BBS (MSGTXT.DAT - GOLDBASE)
+     Used By : both GoldBase & Classic.
+     Purpose : Used to store the STRING for the actual message text *)
+  MsgTxtRecord = String[255];
+
+{-------------------------------------------------------------------------}
+  { Nodelist Records *************************************************** }
+
+  NodeTypes      = (ntZone, ntRegion, ntNet, ntNode, ntPrefix);
+
+  NodeIdxRecord  = record
+                       NodeType       : NodeTypes;
+                       Number,
+                       Cost           : Word;
+                       RawFile        : Byte;
+                       RawPos         : LongInt;
+                   end;
+
+  FileNameType   = String[12];
+
+  NodeIncRecord  = record
+                       FileName       : FileNameType;
+                       DateStamp      : LongInt;
+                   end;
+
+  { Message Records ******************************************************}
+
+{-------------------------------------------------------------------------}
+  (* File ID : COMBINED.BBS
+     Used By : both GoldBase & Classic.
+     Purpose : Used to store the USERS choice for viewing this conference *)
+  
+  CombSelectType = array[1..MaxMsgAreas] of Boolean;
+  (* Note: record 0 of COMBINED.BBS is a placeholder only, and contains no
+     information. *)
+
+
+{-------------------------------------------------------------------------}
+  InfoRecord = record
+{$IFDEF GOLDBASE}
+                 LowMsg  : LongInt;
+                           { Lowest Message in File }
+                 HighMsg : LongInt;
+                           { Highest Message in File }
+
+                 TotalActive : LongInt;
+                               { Total Active Messages }
+
+                 ActiveMsgs : array[1..MaxMsgAreas] of Word;
+{$ELSE}
+                 LowMsg  : Integer;
+                           { Lowest Message in File }
+                 HighMsg : Integer;
+                           { Highest Message in File }
+
+                 TotalActive : Integer;
+                             { Total Active Messages }
+
+                 ActiveMsgs : array[1..MaxMsgAreas] of Integer;
+{$ENDIF}
+               end;
+
+{-------------------------------------------------------------------------}
+  (* File ID : MSGIDX.BBS (MSGIDX.DAT - GOLDBASE)
+     Used By : both GoldBase & Classic.
+     Purpose :  *)
+  IdxRecord = record
+{$IFDEF GOLDBASE}
+                MsgNum : LongInt;
+                Board  : Word;
+{$ELSE}
+                MsgNum : Integer;
+                Board  : Byte;
+{$ENDIF}
+              end;
+
+{-------------------------------------------------------------------------}
+  (* File ID : MSGHDR.BBS (MSGHDR.DAT - GOLDBASE)
+     Used By : both GoldBase & Classic.
+     Purpose :  Stores the header information *)
+  HdrRecord = record
+{$IFDEF GOLDBASE}
+                MsgNum,
+                ReplyTo,
+                SeeAlsoNum : LongInt;
+{$ELSE}
+                MsgNum,
+                ReplyTo,
+                SeeAlsoNum,
+{$ENDIF}
+                TRead    : Integer;
+{$IFDEF GOLDBASE}
+                StartRec : LongInt;
+{$ELSE}
+                StartRec : Word;
+{$ENDIF}
+                NumRecs,
+                DestNet,
+                DestNode,
+                OrigNet,
+                OrigNode : Integer;
+                DestZone,
+                OrigZone : Byte;
+                Cost     : Integer;
+                MsgAttr,
+                NetAttr,
+                (* NOTE:  MsgAttr and NetAttr are WORD for GOLDBASE *)
+{$IFDEF GOLDBASE}
+                Board    : Word;
+{$ELSE}
+                Board    : Byte;
+{$ENDIF}
+                PostTime : String[5];
+                PostDate : String[8];
+                WhoTo,
+                WhoFrom  : String[35];
+                Subj     : String[72];
+              end;
+
+
+(* Msg Attributes:
+
+      Bit 0: Deleted
+      Bit 1: Unmoved Outgoing Net Message
+      Bit 2: Is a Net Mail Message
+      Bit 3: Private
+      Bit 4: Received
+      Bit 5: Unmoved Outgoing Echo Message
+      Bit 6: Local Bit
+      Bit 7: Group Message
+
+   Net Attributes:
+
+      Bit 0: Kill Message after it's been sent
+      Bit 1: Sent OK
+      Bit 2: File(s) Attached
+      Bit 3: Crash Priority
+      Bit 4: Request Receipt
+      Bit 5: Audit Request
+      Bit 6: Is a Return Receipt
+      Bit 7: Freq
+
+*)
+
+  { Other Stuff *********************************************************** }
+
+{-------------------------------------------------------------------------}
+  (* File ID : SYSINFO.BBS
+     Used By : both GoldBase & Classic.
+     Purpose :  *)
+  SysInfoRecord = record
+                    CallCount        : LongInt;
+                    LastCallerName   : String[35];
+                    LastCallerAlias  : String[35];
+                    ExtraSpace : array[1..92] of Byte;
+                  end;
+
+{-------------------------------------------------------------------------}
+  (* File ID : TODAY.BBS
+     Used By : both GoldBase & Classic.
+     Purpose :  *)
+  TodayRecord = record
+                     Name           : String[35];
+                     Alias          : String[35];
+                     Line           : Byte;
+                     City           : String[25];
+                     Date           : Longint;
+                     Time           : Longint;
+                   end;
+
+{-------------------------------------------------------------------------}
+  (* File ID : TIMELOG.BBS
+     Used By : both GoldBase & Classic.
+     Purpose : Record data on % of daily usage *)
+  TimeLogRecord = record
+                    StartDate   : String[8];
+                    BusyPerHour : array[0..23] of Integer;
+                    BusyPerDay  : array[0..6] of Integer;
+                  end;
+
+{-------------------------------------------------------------------------}
+  (* File ID : LASTREAD.BBS (LASTREAD.DAT - GOLDBASE)
+     Used By : both GoldBase & Classic.
+     Purpose :  *)
+{$IFDEF GOLDBASE}
+  LastReadType = Array[1..MaxMsgAreas] of LongInt;
+{$ELSE}
+  LastReadType = Array[1..MaxMsgAreas] of Word;
+{$ENDIF}
+
+{-------------------------------------------------------------------------}
+  (* File ID : *.MNU
+     Used By : both GoldBase & Classic.
+     Purpose : Stores the Menu Information  *)
+  MenuRecord = record
+                 Typ   : Byte;
+                 Sec   : Word;
+                 Flags : FlagType;
+                 Str   : String[75];
+                 Key   : Char;
+                 Data  : String[80];
+                 Fg,
+                 Bg    : Byte;
+               end;
+
+{-------------------------------------------------------------------------}
+  (* File ID : *.LNG
+     Used By : both GoldBase & Classic.
+     Purpose : Stores the information for the language prompts *)
+  Type
+    PhraseRecord=Record
+      TextString : String[80];
+      KeyString  : String[10];
+      Color      : Byte;
+     End;
+
+  { Configuration Information ********************************************** }
+
+  TypeMsgs  = (Standard,Netmail,FMail,EchoMail);
+  KindMsgs  = (Both,Private,Public,ROnly);
+
+{  Msg_Base_Board_Type = (LocalEmail, NetMail, FileMail, EchoMail, Internet);
+  InterNet_Board_Type = (EMail, UseNet, MailingList);}
+
+  AskType   = (No, Maybe, Yes);
+  ProtocolEnableType = (Never, MNP_Only, Always);
+  ProtocolTypes      = (Xmodem, Xmodem1K, Ymodem, YmodemG,
+                        Kermit, Zmodem, External);
+
+{-------------------------------------------------------------------------}
+  SecurityRecord = Record
+                   { part of main config record }
+    Security : Word;
+    Flags    : FlagType;
+  End;
+
+{-------------------------------------------------------------------------}
+  (* File ID : FILECFG.DAT
+     Used By : both GoldBase & Classic.
+     Purpose : Stores the information for the language prompts *)
+  FileAreaRecord = Record
+    AreaName,
+    FilePath,
+    ListPath    : String[66];
+    AllowUploads,
+    IgnoreKlimit,
+    IgnoreRatio : Boolean;
+    DlSec       : SecurityRecord;
+    SearchSec   : SecurityRecord;
+    TemplateSec : SecurityRecord;
+    CheckDupes  : Boolean;
+    Group       : Byte;
+    Spare       : Array[3..12] of Byte;
+  End;
+
+{-------------------------------------------------------------------------}
+  (* File ID : MSGCFG.DAT
+     Used By : both GoldBase & Classic.
+     Purpose : Stores the Message Base Definitions *)
+  BoardRecord = record
+                  Name            : String[40];
+                  Typ             : TypeMsgs;
+                  Kinds           : KindMsgs;
+                  Combined        : Boolean;
+                  Aliases         : AskType;
+                  Aka             : Byte;
+                  OriginLine      : String[58];
+                  AllowDelete     : Boolean;
+                  KeepCnt,
+                          (* Max # of Msgs to keep *)
+                  KillRcvd,
+                          (* Kill received msgs after this many days *)
+                  KillOld         : Word;
+                          (* Kill msgs after this many days *)
+                  ReadSec         : SecurityRecord;
+                  WriteSec        : SecurityRecord;
+                  TemplateSec     : SecurityRecord;
+                  SysopSec        : SecurityRecord;
+                  FileArea        : Integer;
+                                    (* for Fmail *)
+                  Group           : Byte;
+                  Spare           : Array[4..12] of Byte;
+                end;
+
+{-------------------------------------------------------------------------}
+   EventStat = (Deleted, Enabled, Disabled);
+
+{-------------------------------------------------------------------------}
+  (* File ID : NOT USED ANYMORE
+     Used By : both GoldBase & Classic.
+     Purpose : Use to Store the Old Event Configs *)
+   (* Replaced in v2.81 with NEWeventRecord ... Name changed for
+      backward compt. *)
+   OldEventRecord = record
+                  Status      : EventStat;
+                  RunTime     : LongInt;
+                  ErrorLevel  : Byte;
+                  Days        : Byte;
+                  Forced      : Boolean;
+                  LastTimeRun : LongInt;
+                  Spare       : Array[1..7] of Byte;
+                end;
+
+{-------------------------------------------------------------------------}
+  (* File ID : EVENTCFG.DAT
+     Used By : both GoldBase & Classic.
+     Purpose : Use to Store the Event Configuration *)
+   NewEventRecord = record
+                  Title       : String[20];
+                                (* Name of the Event*)
+                  Status      : EventStat;
+                                (* Active Or Not    *)
+                  Days        : Byte;
+                                (* What Days to Run *)
+                  OnceAMonth  : Boolean;
+                  RunTime     : LongInt;
+                                (* Time To Start    *)
+                  StopTime    : LongInt;
+                                (* Time Event Stops *)
+                  EventAttrib : Word;
+                                (* See below        *)
+                  ErrorLevel  : Byte;
+                                (* What Errorlevel To Shell With  *)
+                  LastDateRun : Longint;
+                  Spare       : Array[1..8] of Byte;
+            End;
+                    (* Days - Byte - Bit 0 = Sunday ...
+                                     Bit 1 = Monday ...
+                                     Bit 7 = Sunday
+                                     Bit 8 = Once a Month *)
+
+                    (* Event Attrib
+                       Bit 1 - Deny Users Logon
+                       Bit 2 - External Event (Shell) w/Errorlevel
+                       Bit 3 - ShutDown Board
+                       Bit 4 - Forced Event (Precedes before UserLogins)
+                       Bit 5 -
+                       Bit 6 -
+                       Bit 7 -
+                       Bit 8 - Deny File Area Access
+                       Bit 9 - Deny Message Base Access
+                       Bit 10-
+                       Bit 11-
+                       Bit 12-
+                       Bit 13-
+                       Bit 14-
+                       Bit 15- New Users Only (Deny Established Users)
+                       Bit 16- No Newbies
+                    *)
+
+{-------------------------------------------------------------------------}
+   FileKLimitRecord = record 
+                         { For limit records }
+                        Baud  : Word;
+                        Limit : Integer;
+                      end;
+
+{-------------------------------------------------------------------------}
+  (* File ID : LIMITS.DAT
+     Used By : both GoldBase & Classic.
+     Purpose : Use to Store the Limit Configuration *)
+   LimitRecord = record
+                   Security     : Word;
+                   DailyLimit,
+                   SessionLimit,
+                   DownLimit    : Integer;
+                   PwdLife      : Byte;
+                   MinBaud      : Word;
+                   FileKLimits  : Array[1..8] of FileKLimitRecord;
+                   FileKRatio   : Integer;
+                   FileRatio    : Integer;
+                   ExpireQuest  : String[8];
+                                (* Questionaire to run when subscription expires *)
+                   ExpireText   : String[8];
+                                (* Text File to display when subscription expires soon *)
+                   DaysWarning  : Byte;
+                                (* Number of days before expiration to start displaying ExpireText *)
+                   Description  : String[40];
+                   TopMenu      : String[8];
+                   UserPurge    : Byte;
+                                (* For UserPack - delete users who haven't called in this many days *)
+                   MoreFileKLimits  : Array[9..12] of FileKLimitRecord;
+                   ForceMsgRead : Boolean;
+                   Spare        : Array[19..20] of Byte;
+                 end;
+
+{-------------------------------------------------------------------------}
+  (* File ID : LANGUAGE.DAT
+     Used By : both GoldBase & Classic.
+     Purpose : Use to Store the configuration for Language Data Files *)
+   LanguageRecord = record
+                      DisplayName : String[20];
+                      IEMSIname   : String[5];
+                      Available   : Boolean;
+                      PhraseFile,
+                      MenuPath,
+                      TextPath,
+                      QuestPath   : String[66];
+                      Spare       : Array[1..200] of Byte;
+                    end;
+
+{-------------------------------------------------------------------------}
+  (* File ID : PROTOCOL.DAT
+     Used By : both GoldBase & Classic.
+     Purpose : Use to Store the configuration for the Xfer Protocols *)
+  ProtocolRecord = record
+                     Name                 : string[25];
+                     Key                  : Char;
+                     ProtocolType         : ProtocolTypes;
+                     LogCharacter         : Char;
+                     UploadsAllowed       : ProtocolEnableType;
+                     DownloadsAllowed     : ProtocolEnableType;
+                     LogFile              : string[66];
+                     ControlFile          : string[66];
+                     UploadCommand        : string[100];
+                     UploadControl        : string[100];
+                     DownloadCommand      : string[100];
+                     DownloadControl      : string[100];
+                     SupportsBatch        : Boolean;
+                     FileNamePos          : Byte;
+                     UploadKeyword        : string[20];
+                     DownloadKeyword      : string[20];
+                     SuccessErrorLevel    : Byte;
+                     FailureErrorLevel    : Byte;
+                     Efficiency           : Byte;
+                     Spare                : Array[1..100] of Byte;
+                   end;
+
+{-------------------------------------------------------------------------}
+   ModemTranslationRecord = Record
+                            { for main config record }
+                   TranslateFrom : String[25];
+                   TranslateTo   : Word;
+                 End; {25+4 = 29}       {29*20 = 580}
+
+   NewModemTrans          = Record
+                            { for main config record }
+                   TranslateFrom : String[15];
+                   TranslateTo   : Word;
+                 End; {15+4 = 19 bytes}
+                      {Allows us to move to 30 Modem Defs}
+
+   Key4Type = Array[1..4] of Word;
+
+{-------------------------------------------------------------------------}
+  (* File ID : NODECFG.DAT
+     Used By : both GoldBase & Classic.
+     Purpose : Use to Store the configuration data for each individual
+               nodes
+     Size of Structure (v2.90) : 1633 Bytes
+  *)
+   NodeConfigRecord = record
+                        Node      : Byte;
+                                  (* Node #, can be overriden by -Nxx CmdLine *)
+
+                       (*  Modem Parameters  *)
+
+                        CommPort      : Integer;
+                        InitBaud      : Word;
+                        ModemDelay    : Word;
+                        InitTimes,
+                        AnswerWait    : Integer;
+                        ModemInitStr,
+                        ModemBusyStr  : String[70];
+                        ModemInitResp,
+                        ModemBusyResp : String[40];
+
+                        ModemConnectResp : Array[1..30] of NewModemTrans;
+                        ConnectPrefix   : String[15];
+{                        ModemConnectResp : Array[1..20] of ModemTranslationRecord;}
+                        ModemConnectPad  : Array[1..4] of Byte;
+                        CBV_CallbackDelay,
+                        CBV_WakeupDelay : Word;
+
+                        ARQ_String      : String[8];
+                        SendATA         : Boolean;
+
+                        NetPath,
+                        NodelistPath,
+                        MsgPath,
+                        SwapPath,
+                        OverlayPath     : String[66];
+                        EditorCmdStr,
+                        UserEditor      : String[70];
+                        OriginLine      : String[58];
+                        MinBaud,
+                        GraphicsBaud,
+                        XferBaud        : Integer;
+
+                       (* Callback verifier *)
+                        VerifierInit    : string[35];
+                        DialString      : string[15];
+                        DialSuffix      : string[15];
+
+                       (*  Default Information for New Users  *)
+                        DefaultSec      : SecurityRecord;
+                        MinimumSec      : SecurityRecord;
+                        DefaultCredit   : Integer;
+                        FastLogon       : Boolean;
+                        LogFileName     : String[66];
+                        XmitBuffer,
+                        RcvBuffer       : Word;
+                        DataBits,
+                        StopBits        : Byte;
+                        Parity          : Char;
+                        ModemInit2,
+                        ModemInit3      : String[45];
+                        ExtraSpace      : array[188..220] of byte;
+                       {                 array[02..200] of byte;}
+                End;
+
+{-------------------------------------------------------------------------}
+  (* File ID : QUICKCFG.DAT
+     Used By : both GoldBase & Classic.
+     Purpose : Use to Store the shared configuration data for the BBS
+     Size of Structure (v2.85) : 2084 Bytes
+     Size of Structure (v2.90) : xxxx Bytes
+  *)
+   ConfigRecord = record
+
+                   VersionID : Word;
+
+                   DateFormat  : String[8];
+
+                   WasNodeInfo : Array[1..472] of Byte;
+
+                   (*  System Paths  *)
+                   Was_EditorCmdStr    : String[70];
+                   (* Editor for Text Files *)
+
+                   Stat6Line1,
+                   Stat6Line2,
+                   WasNetPath,
+                   WasNodelistPath    : String[66];
+
+                   (* Do Not Touch, for v2.81 BlueWave Compt *)
+                   BlueWaveMsgPath    : String[66];
+
+                   TextEditorPath,
+                   WasOverlayPath     : String[66];
+
+                   TextEditorErrorlvl : Boolean;
+                   OldPrompts : Array[2..213] of Byte;
+
+                   (* System misc strings *)
+                   OldOriginLine      : String[58];
+                   QuoteStr        : String[3];
+
+                   (*  User Restrictions *)
+                   LowBaudStart,
+                   LowBaudEnd,
+                   DownloadStart,
+                   DownloadEnd     : LongInt;
+                   MaxPageTimes,
+                   PageBellLen     : Integer;
+                   PagingStart,
+                   PagingEnd       : LongInt;
+                   OldBaudStuff    : Array[1..6] of Byte;
+
+                   (*  Matrix Information  *)
+                   MatrixZone,
+                   MatrixNet,
+                   MatrixNode,
+                   MatrixPoint     : array[0..10] of Integer;
+                   NetMailBoard    : Integer;
+
+                   OldNewUserInfo : Array[1..14] of Byte;
+
+                   (*  Sysop Security Etc. *)
+                   SysopSecurity   : SecurityRecord;
+                   SysopName       : String[35];
+                   SystemName      : String[40];
+                   RegKey          : LongInt;
+
+                   (*  Misc System Parameters  *)
+
+                   TextFileShells,
+                   AltJswap,
+                   Editorswap,
+                   AutoLogonChar        : Boolean;
+
+                   DeleteAttachs        : Boolean;
+                   (* Delete Attach's is contained in the Old position for
+                      FastLogon.  Fastlogon is now in Nodecfg *)
+
+                   UseLastRead,
+                   MonoMode,
+                   DirectWrite,
+                   SnowCheck,
+                   NetEchoExit,
+                   OneWordNames,
+                   CheckMail,
+                   AskHomePhone,
+                   AskDataPhone,
+                   AskBirthday,
+                   AskSex,
+                   Use_Xmodem,
+                   Use_Xmodem1k,
+                   Use_Ymodem      : Boolean;
+                   Use_YmodemG     : ProtocolEnableType;
+                   Use_Kermit,
+                   Use_Zmodem,
+                   Inp_Fields,
+                   GraphicsAvail,
+                   ForceUS_Phone   : Boolean;
+                   InactiveTimeOut : Integer;
+                   LogonTime       : Integer;
+                   DefFgColor      : Integer;
+                   DefBgColor      : Integer;
+                   PasswordTries   : Integer;
+                   EntFldColor     : Byte;
+                                     (* Color for entry fields *)
+                   BorderColor     : Byte;
+                                     (* Color for menu borders *)
+                   WindowColor     : Byte;
+                   StatusBarColor  : Byte;
+                   UploadCredit    : Integer;
+                   ScreenBlank     : Byte;
+
+                   (* Callback verifier *)
+                   CBV_Spare       : Array[1..68] of Byte;
+                   DupeCheck       : Boolean;
+                   NewUserSec,
+                   MemberSec       : Word;
+                   MemberFlags     : Array[1..4,1..8] of Char;
+                   LDcost          : Word;
+                   LDenable,
+                   ResumeLocal,
+                   ResumeLD        : Boolean;
+                   LDstart,
+                   LDend           : Longint;
+
+                   ForgotPwdBoard  : Byte;
+                   WasSendATA      : Boolean;
+
+                   Location        : String[60];
+
+                   ArchiveNetMail  : Boolean;
+
+                   IEMSI,
+                   IEMSI_New,
+                   AutoAnsi,
+                   MultiNode,
+                   AutoLogChat     : Boolean;
+                   WasUserEditor      : String[70];
+
+                   FileAreaCols,
+                   MsgAreaCols     : Byte;
+
+                   NewUserExpiry   : Word;
+
+                   PasswordLength  : Byte;
+
+                   ShowIdle        : Boolean;
+
+                   LocalRipExt     : String[3];
+
+                   Key4            : Key4Type;
+
+                   ExtraSpace      : Array[159..400] of Byte;
+
+                 end;
+
+{-------------------------------------------------------------------------}
+  (* File ID : MSTRINGS.DAT
+     Used By : both GoldBase & Classic.
+     Purpose : Use to Store the Modem Initialization Strings *)
+{     Old_Modem_Strings = Record
+                       ModemName : String[66];
+                       ModemInit_1: String[128];
+                       ModemInit_2: String[128];
+                       ModemInit_3: String[128];
+                       Spare : Array[1..50] of Byte;
+     End;}
+
+     Modem_Strings = Record
+                   ModemName    : String[30];
+                   OnHook       : String[25];
+                   OffHook      : String[25];
+                   ModemInit_1  : String[75];
+                   ModemInit_2  : String[75];
+                   ModemInit_3  : String[75];
+                   DialPrefix   : String[25];
+                   Spare        : Array[1..167] of Byte;
+     End;
+
+{-------------------------------------------------------------------------}
+Type    MenuHelpCfg_Rec = Record
+             Description    : String[37];
+                              (* Visible Help Descrpt.           *)
+             Options        : String[37] ;
+                              (* Visible "Options" For Menu Type *)
+             Visible_Line   : String[75] ;
+                              (* Menu's Visible Line             *)
+             Optional_Data  : String[80];
+                              (* Menu's Optional Data            *)
+             ImportOkay     : Boolean;
+             Menu_Type      : Word;
+                              (* Menu Type to be imported        *)
+             Security       : SecurityRecord;
+             Hot_Key        : Char;
+             ForeGround,
+             BackGround     : Byte;
+             Group          : Byte;
+End;
+
+
+  GosubDataType = array[1..20] of String[8];
+
+{-------------------------------------------------------------------------}
+  (* File ID : EXITINFO.BBS
+     Used By : both GoldBase & Classic.
+     Purpose : Dropfile that is created, stores user information *)
+  ExitRecord = record
+                 {BaudRate        : Integer; - Forced to Change to Word
+                                               to help prevent
+                                               overflow/rollover to
+                                               negative #'s, in v2.90 b5}
+                 BaudRate        : Word;
+                 SysInfo         : SysInfoRecord;
+                 TimeLogInfo     : TimeLogRecord;
+                 UserInfo        : UserRecord;
+                 (* EventInfo is *NO LONGER* used.  It should be *)
+                 (* initialized to NULL Access the Event File Directly *)
+                 EventInfo       : Array[1..19] of Byte;
+                 NetMailEntered  : Boolean;
+                 EchoMailEntered : Boolean;
+                 LoginTime       : String[5];
+                 LoginDate       : String[8];
+                 TmLimit         : Integer;
+                 LoginSec        : LongInt;
+                 Credit          : LongInt;
+                 UserRecNum      : Integer;
+                 ReadThru        : Word;
+                 PageTimes       : Integer;
+                 DownLimit       : Integer;
+                 WantChat        : Boolean;
+                 GosubLevel      : Byte;
+                 GosubData       : GosubDataType;
+                 Menu            : String[8];
+                 ScreenClear     : Boolean;
+                 MorePrompts     : Boolean;
+                 GraphicsMode    : Boolean;
+                 ExternEdit      : Boolean;
+                 ScreenLength    : Integer;
+                 MNP_Connect     : Boolean;
+                 ChatReason      : String[48];
+                 ExternLogoff    : Boolean;
+                 ANSI_Capable    : Boolean;
+                 CurrentLanguage : Byte;
+                 RIP_Active      : Boolean;
+                 ExtraSpace      : Array[2..200] of Byte;
+               end;
