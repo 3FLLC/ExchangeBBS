@@ -18,6 +18,7 @@ uses
    Chains;      // Add Chain Memory and Chaining...
 
 {$DEFINE PLUGINS}
+{$DEFINE EXCHANGEBBS}
 
 Var
    ScriptRoot:String;
@@ -32,6 +33,13 @@ Var
 {$I plugins/newsignup.inc}
 {$I plugins/loginprocess.inc}
 
+{###################  doCreateTotals  #######################################
+#   Purpose....: Create Missing Statistics Summary Database                 #
+#   In params..: *                                                          #
+#   Out params.: *                                                          #
+#   Returns....: *                                                          #
+#   Created....: 1170909 by Ozz                                             #
+############################################################################}
 Procedure doCreateTotals;
 Var
    Schema:TStringList;
@@ -63,6 +71,13 @@ Begin
    DBF.Free;
 End;
 
+{###################  IncrementCallers  #####################################
+#   Purpose....: Increment the number of system connections ASAP            #
+#   In params..: *                                                          #
+#   Out params.: *                                                          #
+#   Returns....: *                                                          #
+#   Created....: 1170909 by Ozz                                             #
+############################################################################}
 Procedure IncrementCallers;
 var
    DBF:THalcyonDataset;
@@ -80,6 +95,13 @@ Begin
    DBF.Free;
 End;
 
+{###################  ShowTosserStats  ######################################
+#   Purpose....: Originally show message stats only - expanded to system.   #
+#   In params..: *                                                          #
+#   Out params.: *                                                          #
+#   Returns....: *                                                          #
+#   Created....: 1170909 by Ozz                                             #
+############################################################################}
 procedure ShowTosserStats;
 var
    DBF:THalcyonDataset;
@@ -91,12 +113,12 @@ Begin
    DBF.SetFileName(ScriptRoot+'data/tosstats.dbf');
    DBF.Open;
    Field:=DBF.GetFieldByName('ELAPSE');
-   FastWrite(#13#10+'   |09o|0CO|09o |0EFidonet Tosser: |03'+IntToCommaStr(Field.getAsInteger)+'s |02CPU Time|0F,');
+   FastWrite(#13#10+'   |19o|1CO|19o |1EFidonet Tosser: |13'+IntToCommaStr(Field.getAsInteger)+'s |12CPU Time|1F,');
    Field:=DBF.GetFieldByName('PACKETS');
-   FastWrite(' |0EPackets: |03'+IntToCommaStr(Field.GetAsInteger)+'|0F,');
+   FastWrite(' |1EPackets: |13'+IntToCommaStr(Field.GetAsInteger)+'|1F,');
    Field:=DBF.GetFIeldByName('MESSAGES');
    AllMessages:=Field.GetAsInteger;
-   FastWrite(' |0EMessages: |03'+IntToCommaStr(Field.GetAsInteger)+#13#10);
+   FastWrite(' |1EMessages: |13'+IntToCommaStr(Field.GetAsInteger)+#13#10);
    DBF.Close;
    DBF.Free;
 
@@ -121,13 +143,12 @@ Begin
    DBF.Close;
    DBF.Free;
 
-   FastWrite('   |09o|0CO|09o |0EThe Current System Date is |0C'+FormatTimeStamp('ddd mmm dd yyyy',TimeStamp)+'|0E and Time is |0C'+FormatTimeStamp('hh:nn |0Eam/pm',TimeStamp)+#13#10+
-      '   |09o|0CO|09o |0ETotal Number of Messages   |30'+PadLeft(IntToCommaStr(AllMessages),9)+'|07'+#13#10+
-      '   |09o|0CO|09o |0ETotal Number of Files      |30'+PadLeft(IntToCommaStr(AllFiles),9)+'|07'+#13#10+
-      '   |09o|0CO|09o |0ETotal Number of File Areas |30'+PadLeft(IntToCommaStr(AllFileAreas),9)+'|07'+#13#10+
-      '   |09o|0CO|09o |0ETotal Number of Downloads  |30'+PadLeft(IntToCommaStr(AllDownloads),9)+'|07'+#13#10+
-      '   |09o|0CO|09o |0ETotal Number of Callers    |30'+PadLeft(IntToCommaStr(AllCallers),9)+'|07'+#13#10+
-      '   |09o|0CO|09o |0ETotal Number of Users      |30'+PadLeft(IntToCommaStr(AllUsers),9)+'|07'+#13#10);
+   FastWrite('   |19o|1CO|19o |1EThe Current System Date is |1C'+FormatTimeStamp('ddd mmm dd yyyy',TimeStamp)+'|1E and Time is |1C'+FormatTimeStamp('hh:nn |1Eam/pm',TimeStamp)+#13#10+
+      '   |19o|1CO|19o |1ENumber of Files......|30'+PadLeft(IntToCommaStr(AllFiles),9)+
+      '|1E   Number of File Areas.|30'+PadLeft(IntToCommaStr(AllFileAreas),9)+'|17'+#13#10+
+      '   |19o|1CO|19o |1ENumber of Downloads..|30'+PadLeft(IntToCommaStr(AllDownloads),9)+'|17'+#13#10+
+      '   |19o|1CO|19o |1ENumber of Users......|30'+PadLeft(IntToCommaStr(AllUsers),9)+
+      '|1E   Number of Calls......|30'+PadLeft(IntToCommaStr(AllCallers),9)+'|17'+#13#10);
    //FastWrite('   |5F*|09 The last caller was '+PreviousCaller+' @ '+FormatTimeStamp('mmm dd yyyy hh:nn |0Eam/pm',PreviousCalled)+#13#10);
 End;
 
@@ -136,10 +157,17 @@ End;
    {$I plugins/last_caller.inc}
 {$ENDIF}
 
+{################### Main() #################################################
+#   Purpose....: Initial Code for Exchange Bulletin Board System            #
+#   In params..: *                                                          #
+#   Out params.: *                                                          #
+#   Returns....: *                                                          #
+#   Created....: 1150701 by Ozz                                             #
+############################################################################}
 Begin
    Randomize;
    ScriptRoot:=ExtractFilePath(ExecFilename);
-   InitFastTTT;
+   InitFastTTT1stTime;
    If not FileExists(ScriptRoot+'data/totals.dbf') then doCreateTotals;
    IncrementCallers;
 {$IFDEF CODERUNNER}
@@ -147,6 +175,7 @@ Begin
 {$ENDIF}
    i18n.init;
 Try
+
 {$I plugins/detect_ansi.inc}
 
    Chain.Retrieve('HASANSI',HasAnsi);
@@ -158,7 +187,7 @@ Try
    End
    Else Begin
 {$I plugins/detect_colors.inc}
-      CLS(7,0);
+      CLS(7,1);
       DisplayFileEx(ScriptRoot+'ansasc/welcome');
    End;
    ShowTosserStats;
